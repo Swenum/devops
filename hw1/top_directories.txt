@@ -1,0 +1,7 @@
+9.1G	/
+4.1G	/swap.img
+3.0G	/usr
+1.7G	/usr/lib
+1.6G	/var
+1.2G	/var/lib
+1012M	/var/lib/rancher/k3s
