@@ -209,9 +209,28 @@ fi
 
 3. Что такое systemd ?
 
+```
+Systemd — это система инициализации и менеджер служб для операционных систем на базе Linux. Он предназначен для управления процессами и службами, упрощая запуск, остановку и мониторинг служб, а также их конфигурацию. Systemd стал стандартной системой инициализации для многих современных дистрибутивов Linux, таких как Fedora
+, CentOS
+, Ubuntu и Debian.
+```
 
 4. Написать любой сервис в линуксе.
 
+```bash
+[Unit]
+Description=ROT13 demo service
+After=network.target
+StartLimitIntervalSec=0[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=centos
+ExecStart=/usr/bin/env bash /root/mycool_script.py
+
+[Install]
+WantedBy=multi-user.target
+```
 
 ### HW3
 
@@ -220,24 +239,43 @@ fi
 
 ```bash
 #!/bin/bash
-# Запрос имени пользователя
+echo "Написать скрипт, пользователь вводит строку из букв и специальных символов в нижнем регистре и верхнем регистре. Нужно посчитать, сколько в этой строке больших букв."
+# Запрос строки
 read -p "Введите строку: " string
+echo $string | sed -E 's/[[:lower:]]|[[:punct:]]|[[:space:]]//g' | wc -m
 
 
 ```
 
 
-
 2. Написать скрипт, который будет делать ping google.com. Если сервер отвечает, то выводить - success, если нет - doesn't work.
-
+```bash
+#!/bin/bash
+echo "Написать скрипт, который будет делать ping google.com. Если сервер отвечает, то выводить - success, если нет - doesn't work."
+ping  10.11.1.55 -c 4
+if [ $? -eq 0 ]
+then
+  echo "Ping was successful"
+  exit 0
+else
+  echo "Ping doesn't work" 
+  exit 1
+fi
+```
 
 3. Написать скрипт, который будет выводить текущую дату и время.
-
+```bash
+date
+```
 ### HW4
 
 1. Выкачать свой репозиторий с помощью ssh способа.
    +
 3. С помощью .gitignore, сделать так, чтобы все файлы *.txt не попадали в репозиторий.
+
+```
+$GIT_DIR/hw2/error/*.txt
+```
 4. Изучить что такое git cherry-pick.
 5. Продемонстрировать применение git cherry-pick на собственном репозитории (придумать любой пример).
 6. Какая разница между git rebase и git merge ?
