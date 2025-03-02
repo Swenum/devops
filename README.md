@@ -51,13 +51,16 @@ echo "Топ-7 директорий, занимающих больше всег�
 USER='u.schuka'
 useradd -m "$USER"
 mkdir -p /home/"$USER"/.ssh
-echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDImDp8kZKfq+OBcaWLIvshozRogPTv63Kd8Nbz6+Esas3uCoiQoPjHKV3aScDBR0tBPQobemaVICUuihJ/ONjhtV1LPDuZAhVoThtQ6aJJwH5425lgd8F9zQ/JXAuJC9+yOQsg+87mzKFcrg+zudfQ2vOfbNxYkrrsG7+kyZSFwyRioFBNSF+u0yqJWNfnytkWDaULqEVxi4CSycnW/aMHZ6yA5Xadb3sTUhMiXwXbJXVmXUuvBahPXzhToc62+uqPzChqgIoUSRNH7KJZqzttow6sNnnbUrEewQTSf6UZTEIjw4GFBV911yInF8EEZDXFzpiGJZbeuueml2bVsyNB swenum@uladzimir" > /home/"$USER"/.ssh/authorized_keys
-echo "ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAgEA2cAT60z9sWO1Uzz4nURqXUq66kkhjbZ3CXOkOkfouRuspTp4C4JmV+qUZ7dC2niuPTNCV00UIHkUKvX/r5vPUd0KLDw9vTIMOCte6DG1XYeg8aB15iyNt951updJ9zBV+L69iCp8r02zvbb2JzmrhAlNyhENX+6cBc9ToH6oiTFoAjgjxZTT3c3VfaO87APp4tYeYUUecoZHwEKegKO54+uS3gYQ4+nf/Nzs4aw2gPrPqNjUr4viQBdIFgb+jy473v/KUcwn77DmTLsgARgn+QoBfFNKR3FxReVG00wAAzlekjsJKGF+EkzvnRCu5XckciDG+WU1/q4hz9IFsGRQPMywDwkNRVIlZIpft+d7JTpdvWMmApy5L67NIt0xFV1wOXSmJtKZdI+r93j7sMAHKrSMaZoHRBzWlhZKVMaFZpgNOUw0oKld3qxByMo1N/71sOnwyGImLOE/BdhwWPS4aK5UHU45p7h/fo2T5xZufI+yYpdA4AZqzpCBRA+zi2uko0sS916tnubdcI+21tUvwEe8HaltNgzQmItXrW4cHgtzymeNR7GRVcjCnpjZrKUQ5ddgi9kuHoQdBUyzftvzEHcqkMED8AheLAd+WFGwAKvDDS4rJjAnAI0PqvetIbL4G6u2uRbDZLQRipI0FvB5urA6WfUw8Ez5RhBSlkD/GR0= rsa-key-20191204-test-env" >> /home/"$USER"/.ssh/authorized_keys
+# Добавляем ключ в файл authorized_keys
 echo "ssh-ed448 AAAACXNzaC1lZDQ0OAAAADlL4ph5NNzIe+vjO6E/NzfGkJXtAzhx7AJ4G/a6QiLp1K6CZdbeoTrVRCX0zcBOFdaxZaImZ/qmhQA= eddsa-key-my" >> /home/"$USER"/.ssh/authorized_keys
+# Меняем владельца директории
 chown "$USER":"$USER" /home/"$USER" -R
+# Назначаем права, ограничивая доступ только владельцу
 chmod 600 /home/"$USER"/.ssh/authorized_keys
 chmod 700 /home/"$USER"/.ssh
+# Добавляем в группу sudo
 usermod -G sudo "$USER"
+# Изменяем оболочку
 usermod -s /bin/bash "$USER"
 ```
 
@@ -82,7 +85,20 @@ usermod -s /bin/bash "$USER"
 
 В Unix-подобных системах все процессы-сироты немедленно усыновляются специальным системным процессом «init». Эта операция ещё называется переподчинением (англ. reparenting) и происходит автоматически. Хотя технически процесс «init» признаётся родителем этого процесса, его всё равно считают «осиротевшим», поскольку первоначально создавший его процесс более не существует. 
 ```
+### Для увеличения количества максимума открытх файлов
 
+```bash
+$ ulimit -Sn
+$ ulimit -Hn
+# sysctl -w fs.file-max=500000
+cat /proc/sys/fs/file-max
+```
+```/etc/sysctl.conf
+fs.file-max=500000
+```
+```bash
+# sysctl -p
+```
 4. Изучить, что показывает команда top.
 
 ```
@@ -139,7 +155,7 @@ usermod -s /bin/bash "$USER"
 
 ```bash
 #!/bin/bash
-
+echo "Написать скрипт, если в файле есть слово "error", тогда удалить этот файл."
 # Путь к файлу
 file_to_check="your_file.txt"
 
@@ -153,12 +169,26 @@ else
 fi
 
 ```
+#### Второй вариант
+```bash
+#!/bin/bash
+# 
+# grep -E 'error' -r ${PWD}/error/ | cut -d: -f1
+# Создаём файл с содержимым:
+echo "error" > error/file.txt
+# Ищем в директории error/ отрезаем от вывода имя файла
+grep -E 'error' -r ${PWD}/error/ | cut -d: -f1
+# Выводим содержимое найденного файла перед удалением
+#grep -E 'error' -r ${PWD}/error/ | cut -d: -f1 | xargs  cat
+grep -E 'error' -r ${PWD}/error/ | cut -d: -f1 | xargs  rm
+```
 
 2. Написать скрипт, который будет создавать пользователя, имя пользователя должно вводится с клавиатуры.
 Если пользователь существует, то вывести сообщение об этом.
 
-```
+```bash
 #!/bin/bash -x
+echo "Написать скрипт, который будет создавать пользователя, имя пользователя должно вводится с клавиатуры. Если пользователь существует, то вывести сообщение об этом."
 # Запрос имени пользователя
 read -p "Введите имя пользователя: " username
 # Проверка существования пользователя
@@ -187,6 +217,16 @@ fi
 
 
 1. Написать скрипт, пользователь вводит строку из букв и специальных символов в нижнем регистре и верхнем регистре. Нужно посчитать, сколько в этой строке больших букв.
+
+```bash
+#!/bin/bash
+# Запрос имени пользователя
+read -p "Введите строку: " string
+
+
+```
+
+
 
 2. Написать скрипт, который будет делать ping google.com. Если сервер отвечает, то выводить - success, если нет - doesn't work.
 
