@@ -288,16 +288,144 @@ $GIT_DIR/hw2/error/*.txt
 
 1. Зарегистрироваться в Dockerhub.
 2. Создать свой любой имадж(использовать Dockerfile) и запушить имадж в свой репозиторий в Dockerhub. Репозиторий сделать приватный.
+```Dockerfile
+# Stubby - Sends all outgoing DNS queries received on those addresses out over TLS
+
+FROM ubuntu:jammy
+LABEL maintainer="Uladzimir Schuka <wetoster@gmail.com>"
+USER root
+
+RUN sed -i -e 's/^APT/# APT/' -e 's/^DPkg/# DPkg/' \
+      /etc/apt/apt.conf.d/docker-clean
+
+RUN apt-get update && apt-get install -y \
+    bash \
+    bind9 \
+    wget \
+    automake \
+    make \
+    cmake \
+    git \
+    gcc \
+    check\
+    build-essential \
+    libunbound-dev \
+    libldns-dev \
+    autoconf \
+    libevent-dev \
+    libuv1-dev \
+    libev-dev \
+    libssl-dev \
+    libidn11-dev \
+    libidn2-dev \
+    libyaml-dev \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN set -x && \
+    mkdir -p /tmp/src/getdns && \
+    cd /tmp/src/getdns && \
+    wget -O getdns.tar.gz https://getdnsapi.net/releases/getdns-1-7-3/getdns-1.7.3.tar.gz && \
+    tar xzf getdns.tar.gz && \
+    rm -f getdns.tar.gz && \
+    cd getdns-1.7.3 && \
+    groupadd getdns 
+RUN  set -x && \
+    cd /tmp/src/getdns/getdns-1.7.3 && \
+    cmake -DENABLE_STUB_ONLY=ON  -DBUILD_TESTING=OFF . && \
+    make && \
+    rm -rf /tmp/* && \
+    mkdir -p /opt/getdns/var/run/ && \
+    chmod 777 /opt/getdns/var/run/
+   
+
+
+CMD ["/bin/bash", "-c", "read varname"]
+#ENTRYPOINT ["tail", "-f", "/dev/null"]
+```
+
+```bash
+# Cобираем образ, файлы берём из текущей директории
+docker build .
+docker login
+```
+
 3. Изучить разницу между CMD и Entrypoint.
 
 ### HW6
 
 1. Через volume подкинуть конфиг в nginx контейнер, чтобы на страничке в браузере появилась слово Docker (либо через curl это проверить).
 2. То же самое сделать через docker-compose.
+```docker-compose
+version: '2'
+
+services:
+  nginx:
+    restart: always
+    image: nginx:latest
+    #image: dasskelett/nginx-quic
+
+    hostname: man.swn.by man1.swn.by 
+    ports:
+      - "80:80/tcp"
+      - "443:443/tcp"
+      - "443:443/udp"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./letsencrypt:/etc/letsencrypt
+      - ./config:/etc/nginx
+      - ./www:/var/www/html 
+      - ./files:/files
+    environment:
+      - LE_RENEW_HOOK=docker kill -s HUP @CONTAINER_NAME@
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./letsencrypt:/etc/letsencrypt
+      - .letsencrypt_log:/var/log/letsencrypt/
+    command: ["renew"]
+```
 
 ### HW7
 
 1. Развернуть Jenkins.
+```docker-compose
+services:
+  jenkins:
+    restart: always
+    image: jenkins/jenkins:lts-jdk17
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - ./jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    user: root
+    networks:
+      - cicd_network
+
+  nexus:
+    restart: always
+    image: sonatype/nexus3
+    ports:
+      - "8081:8081"
+      - "8083:8083"
+    volumes:
+      - nexus_data:/nexus-data
+    networks:
+      - cicd_network
+volumes:
+  nexus_data:
+    external: true
+    name: nexus_data
+
+
+networks:
+    cicd_network:
+        driver: bridge
+
+
+```
 2. Подключить Linux Slave к Jenkins.
 3. Создать Jenkins pipeline, pipeline должен уметь разворачивать ELK stack. Если не хватает ресурсов, тогда развернуть только Elasticsearch.
    ELK стек должен разворачиваться на новом слейве.
