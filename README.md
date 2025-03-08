@@ -238,19 +238,49 @@ Systemd — это система инициализации и менеджер
 4. Написать любой сервис в линуксе.
 
 ```bash
+# Создаём виртуальное окружение flask для установки бибилиотек, чтобы не устанавливать их локально 
+python3 -m venv flask
+# Входим в окружение
+source flask/bin/activate
+# Устанавливаю Web библотеку для python
+pip install flask
+```
+
+Создаём файл сервиса и размещаем его 
+```ini /etc/systemd/system/mywebapp.service
 [Unit]
-Description=ROT13 demo service
+Description=My Simple Web Application
 After=network.target
-StartLimitIntervalSec=0
+
 [Service]
-Type=simple
+User=root
+WorkingDirectory=/root/devops/hw2
+ExecStart=/usr/bin/bash  /root/devops/hw2/mywebapp.sh
 Restart=always
-RestartSec=1
-User=centos
-ExecStart=/usr/bin/env bash /root/mycool_script.py
 
 [Install]
 WantedBy=multi-user.target
+
+```
+```bash mywebapp.sh
+#!/usr/bin/env bash
+# Создаём обертку для погрузки виртуального окружения до запуска приложения
+source ${PWD}/flask/bin/activate
+python ${PWD}/app.py
+```
+
+```python app.py
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return "Hello, World! DevOps Cource 2025"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+
 ```
 
 ### HW3

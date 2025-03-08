@@ -1,0 +1,13 @@
+[Unit]
+Description=My Simple Web Application
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/devops/hw2
+ExecStart=/usr/bin/bash  /root/devops/hw2/mywebapp.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
