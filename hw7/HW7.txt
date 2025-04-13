@@ -1,0 +1,4 @@
+1. Развернуть Jenkins.
+2. Подключить Linux Slave к Jenkins.
+3. Создать Jenkins pipeline, pipeline должен уметь разворачивать ELK stack. Если не хватает ресурсов, тогда развернуть только Elasticsearch.
+   ELK стек должен разворачиваться на новом слейве.
